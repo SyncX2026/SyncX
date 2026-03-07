@@ -1,0 +1,43 @@
+"use client";
+
+import { useRef } from "react";
+import { useGsapReveal } from "@/hooks/use-gsap-reveal";
+import { CONTENT } from "@/lib/content";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { HelpCircle } from "lucide-react";
+
+export function FaqList() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useGsapReveal(containerRef, { delay: 0.2 });
+  useGsapReveal(listRef, { delay: 0.4, stagger: 0.1 });
+
+  return (
+    <section ref={containerRef} className="py-24 bg-zinc-950/30 relative overflow-hidden">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div ref={listRef} className="space-y-6">
+          {CONTENT.faq.items.map((item, i) => (
+            <Card key={i} className="bg-zinc-900/40 border-zinc-800/60 backdrop-blur-sm hover:border-primary/20 hover:bg-zinc-900/60 transition-all duration-300 group">
+              <CardHeader>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-zinc-800/50 flex items-center justify-center flex-shrink-0 mt-1 group-hover:bg-primary/10 transition-colors">
+                    <HelpCircle className="w-4 h-4 text-zinc-400 group-hover:text-primary transition-colors" />
+                  </div>
+                  <CardTitle className="text-lg font-semibold text-zinc-200 group-hover:text-white transition-colors">
+                    {item.question}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pl-[4.5rem]">
+                <CardDescription className="text-base leading-relaxed text-zinc-400">
+                  {item.answer}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

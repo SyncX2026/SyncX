@@ -1,0 +1,4 @@
+interface:
+  display_name: "SyncX｜加密信息一站式同步器"
+  short_description: "One-stop crypto post sync for X, Square, TG"
+  default_prompt: "Use $syncx to sync this crypto post to X and Binance Square in one run."

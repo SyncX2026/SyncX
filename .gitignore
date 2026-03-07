@@ -1,0 +1,15 @@
+.env
+**/.env
+references/
+
+# Next.js
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/.git-template-backup/
+
+# local artifacts
+*.log
+*.tmp
+
+twitter-docs/
