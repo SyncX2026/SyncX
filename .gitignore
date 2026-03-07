@@ -1,6 +1,9 @@
 .env
 **/.env
 references/
+.DS_Store
+__pycache__/
+*.pyc
 
 # Next.js
 apps/web/node_modules/
