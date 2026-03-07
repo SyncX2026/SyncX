@@ -267,8 +267,8 @@ export const CONTENT = {
     },
     links: {
       docs: "/commands",
-      github: "https://github.com/binance/binance-skills-hub",
-      x: "https://x.com",
+      github: "https://github.com/SyncX2026/SyncX",
+      x: "https://x.com/SyncX_BSC",
     },
   },
 };
