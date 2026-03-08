@@ -46,7 +46,7 @@ PLATFORM_SETUP_DOCS = {
     "twitter": "references/setup-twitter-official.md",
     "tg": "references/setup-telegram.md",
     "threads": "references/setup-threads.md",
-    "farcaster": "references/setup-farcaster-neynar.md",
+    "farcaster": "skills/syncx/SKILL.md#farcaster-neynar-setup",
 }
 
 TWITTER_MODE_DOCS = {

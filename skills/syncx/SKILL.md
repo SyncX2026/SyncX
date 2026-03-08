@@ -144,7 +144,7 @@ Load only the file you need:
 - X browser mode setup: `references/setup-twitter-browser.md`
 - Telegram setup: `references/setup-telegram.md`
 - Threads setup: `references/setup-threads.md`
-- Farcaster (Neynar) setup: `references/setup-farcaster-neynar.md`
+- Farcaster (Neynar) setup: `skills/syncx/SKILL.md#farcaster-neynar-setup`
 - Troubleshooting: `references/troubleshooting.md`
 - Q&A script: `references/qa.md`
 - Source links: `references/sources.md`

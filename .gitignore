@@ -1,9 +1,6 @@
 .env
 **/.env
 references/
-!skills/syncx/references/
-skills/syncx/references/*
-!skills/syncx/references/setup-farcaster-neynar.md
 .DS_Store
 __pycache__/
 *.pyc
