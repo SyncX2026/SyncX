@@ -80,6 +80,17 @@ export function Footer() {
               <Github className="w-5 h-5" />
             </Link>
           </div>
+          <p className="text-xs text-zinc-500 text-center md:text-right">
+            Official CA:{" "}
+            <Link
+              href={CONTENT.shared.links.officialCaExplorer}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-zinc-400 hover:text-primary break-all"
+            >
+              {CONTENT.shared.links.officialCa}
+            </Link>
+          </p>
           <p className="text-xs text-zinc-600">
             {CONTENT.shared.footer.copyright}
           </p>

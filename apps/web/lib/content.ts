@@ -269,6 +269,9 @@ export const CONTENT = {
       docs: "/commands",
       github: "https://github.com/SyncX2026/SyncX",
       x: "https://x.com/SyncX_BSC",
+      officialCa: "0x24d931b3165bcbd167d342e0be92e55d6bbaffff",
+      officialCaExplorer:
+        "https://bscscan.com/address/0x24d931b3165bcbd167d342e0be92e55d6bbaffff",
     },
   },
 };
