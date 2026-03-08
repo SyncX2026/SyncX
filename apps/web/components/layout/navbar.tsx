@@ -19,6 +19,7 @@ export function Navbar() {
     { href: "/", label: CONTENT.shared.nav.home },
     { href: "/workflow", label: CONTENT.shared.nav.workflow },
     { href: "/commands", label: CONTENT.shared.nav.commands },
+    { href: "/publisher", label: CONTENT.shared.nav.publisher },
     { href: "/platforms", label: CONTENT.shared.nav.platforms },
     { href: "/faq", label: CONTENT.shared.nav.faq },
   ];

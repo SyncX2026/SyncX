@@ -7,6 +7,7 @@ export const CONTENT = {
         "SyncX 帮助加密内容创作者将影响力一键同步到 X、币安广场 与更多平台。把重复搬运变成一次命令完成的工作流。",
       primaryCta: "查看使用方式",
       secondaryCta: "命令示例",
+      publisherCta: "网页发布器",
       terminal: {
         status: {
           square: "ready",
@@ -258,6 +259,7 @@ export const CONTENT = {
       home: "Home",
       workflow: "Workflow",
       commands: "Commands",
+      publisher: "Publisher",
       platforms: "Platforms",
       faq: "FAQ",
       cta: "Get Started",

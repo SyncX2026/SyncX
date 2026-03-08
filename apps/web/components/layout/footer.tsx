@@ -48,6 +48,9 @@ export function Footer() {
             <Link href={CONTENT.shared.links.docs} className="text-sm hover:text-primary transition-colors">
               Documentation
             </Link>
+            <Link href="/publisher" className="text-sm hover:text-primary transition-colors">
+              Web Publisher
+            </Link>
             <Link
               href={CONTENT.shared.links.github}
               target="_blank"

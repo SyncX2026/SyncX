@@ -6,7 +6,7 @@ import { CONTENT } from "@/lib/content";
 import { buttonVariants } from "@/components/ui/button";
 import { TerminalWindow } from "@/components/ui/terminal-window";
 import { StatusPill } from "@/components/ui/status-pill";
-import { ArrowRight, Terminal } from "lucide-react";
+import { ArrowRight, Rocket, Terminal } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -74,6 +74,16 @@ export function Hero() {
             >
               <Terminal className="w-4 h-4" />
               {CONTENT.home.hero.secondaryCta}
+            </Link>
+            <Link
+              href="/publisher"
+              className={cn(
+                buttonVariants({ variant: "dark", size: "lg" }),
+                "gap-2"
+              )}
+            >
+              <Rocket className="w-4 h-4" />
+              {CONTENT.home.hero.publisherCta}
             </Link>
           </div>
         </div>
