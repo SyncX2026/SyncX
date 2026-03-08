@@ -1,6 +1,8 @@
 .env
 **/.env
 references/
+!skills/syncx/references/
+!skills/syncx/references/**/*.md
 .DS_Store
 __pycache__/
 *.pyc
