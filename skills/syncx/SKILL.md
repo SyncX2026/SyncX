@@ -1,6 +1,6 @@
 ---
 name: syncx
-description: One-stop crypto creator autopost workflow for syncing the same text post to Binance Square and X/Twitter (plus optional Telegram and Threads) in a single command. Use when user asks to "sync post", "cross-post", "一键同步", "同时发推和广场", "发到 TG/Threads", or needs setup/troubleshooting for Binance Square API key, X API credentials, X browser-cookie mode, Telegram bot/channel posting, and multi-platform posting automation.
+description: One-stop crypto creator autopost workflow for syncing the same text post to Binance Square and X/Twitter (plus optional Telegram, Threads, and Farcaster via Neynar) in a single command. Use when user asks to "sync post", "cross-post", "一键同步", "同时发推和广场", "发到 TG/Threads/Farcaster", or needs setup/troubleshooting for Binance Square API key, X API credentials, X browser-cookie mode, Telegram bot/channel posting, Farcaster Neynar signer setup, and multi-platform posting automation.
 ---
 
 # SyncX｜加密信息一站式同步器
@@ -97,9 +97,34 @@ python3 scripts/publish_sync.py \
 ```bash
 python3 scripts/publish_sync.py \
   --text "test" \
-  --platforms square,twitter,tg,threads \
+  --platforms square,twitter,tg,threads,farcaster \
   --twitter-mode official \
   --dry-run
+```
+
+### 7) Publish to Farcaster only
+```bash
+python3 scripts/publish_sync.py \
+  --text "今日复盘：BTC 4h 级别出现结构拐点" \
+  --platforms farcaster
+```
+
+## Farcaster Neynar Setup
+Farcaster 通过 Neynar managed signer 路径接入，必须完成 signer 批准后才能发帖。
+
+Required env keys:
+- `NEYNAR_API_KEY`
+- `FARCASTER_SIGNER_UUID`
+
+Steps:
+1. 在 Neynar 注册并创建 App，获取 `NEYNAR_API_KEY`。
+2. 在 Neynar 发起 signer request。
+3. 用 Warpcast 打开签名链接并批准 signer。
+4. 将 signer UUID 写入 `FARCASTER_SIGNER_UUID`。
+
+Verification:
+```bash
+python3 scripts/publish_sync.py --doctor --platforms farcaster
 ```
 
 ## Platform Matrix
@@ -108,6 +133,7 @@ python3 scripts/publish_sync.py \
 - `twitter` (`browser`): X web-session mode using `auth_token + ct0` cookies.
 - `tg`: Telegram Bot API `sendMessage` to channel/group/chat.
 - `threads`: Optional Graph API two-step publish.
+- `farcaster`: Neynar `cast` API with approved `signer_uuid`.
 
 ## Setup References
 Load only the file you need:
@@ -118,6 +144,7 @@ Load only the file you need:
 - X browser mode setup: `references/setup-twitter-browser.md`
 - Telegram setup: `references/setup-telegram.md`
 - Threads setup: `references/setup-threads.md`
+- Farcaster (Neynar) setup: `references/setup-farcaster-neynar.md`
 - Troubleshooting: `references/troubleshooting.md`
 - Q&A script: `references/qa.md`
 - Source links: `references/sources.md`

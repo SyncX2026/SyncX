@@ -4,12 +4,13 @@ import { NextResponse } from "next/server";
 const BINANCE_PUBLISH_URL =
   "https://www.binance.com/bapi/composite/v1/public/pgc/openApi/content/add";
 const TWITTER_PUBLISH_URL = "https://api.x.com/2/tweets";
+const FARCASTER_PUBLISH_URL = "https://api.neynar.com/v2/farcaster/cast";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type PublishResult = {
-  platform: "twitter" | "square";
+  platform: "twitter" | "square" | "farcaster";
   ok: boolean;
   httpStatus?: number;
   id?: string;
@@ -26,10 +27,13 @@ type PublishPayload = {
     twitterApiSecret?: string;
     twitterAccessToken?: string;
     twitterAccessSecret?: string;
+    neynarApiKey?: string;
+    farcasterSignerUuid?: string;
   };
   publishTo?: {
     twitter?: boolean;
     binance?: boolean;
+    farcaster?: boolean;
   };
 };
 
@@ -187,6 +191,55 @@ async function publishSquare(text: string, apiKey: string): Promise<PublishResul
   };
 }
 
+async function publishFarcaster(
+  text: string,
+  neynarApiKey: string,
+  signerUuid: string
+): Promise<PublishResult> {
+  const response = await fetch(FARCASTER_PUBLISH_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": neynarApiKey,
+    },
+    body: JSON.stringify({
+      text,
+      signer_uuid: signerUuid,
+    }),
+    cache: "no-store",
+  });
+
+  const rawBody = await response.text();
+  const body = parseJsonSafely(rawBody) as Record<string, unknown>;
+  const cast = body?.cast as Record<string, unknown> | undefined;
+  const hash = cast?.hash ? String(cast.hash) : undefined;
+  const author = cast?.author as Record<string, unknown> | undefined;
+  const username = author?.username ? String(author.username) : undefined;
+
+  if (response.ok && hash) {
+    return {
+      platform: "farcaster",
+      ok: true,
+      httpStatus: response.status,
+      id: hash,
+      url: username ? `https://warpcast.com/${username}/${hash}` : undefined,
+    };
+  }
+
+  return {
+    platform: "farcaster",
+    ok: false,
+    httpStatus: response.status,
+    error:
+      typeof body?.message === "string"
+        ? body.message
+        : typeof body?.error === "string"
+          ? body.error
+          : "Farcaster publish failed",
+    detail: body,
+  };
+}
+
 export async function POST(request: Request) {
   let payload: PublishPayload;
   try {
@@ -208,7 +261,8 @@ export async function POST(request: Request) {
 
   const publishToTwitter = payload.publishTo?.twitter ?? true;
   const publishToBinance = payload.publishTo?.binance ?? true;
-  if (!publishToTwitter && !publishToBinance) {
+  const publishToFarcaster = payload.publishTo?.farcaster ?? false;
+  if (!publishToTwitter && !publishToBinance && !publishToFarcaster) {
     return NextResponse.json(
       { ok: false, error: "Select at least one platform" },
       { status: 400, headers: { "Cache-Control": "no-store" } }
@@ -222,6 +276,8 @@ export async function POST(request: Request) {
     twitterApiSecret: (credentials.twitterApiSecret ?? "").trim(),
     twitterAccessToken: (credentials.twitterAccessToken ?? "").trim(),
     twitterAccessSecret: (credentials.twitterAccessSecret ?? "").trim(),
+    neynarApiKey: (credentials.neynarApiKey ?? "").trim(),
+    farcasterSignerUuid: (credentials.farcasterSignerUuid ?? "").trim(),
   };
 
   if (publishToBinance && !normalizedCreds.binanceApiKey) {
@@ -244,6 +300,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (publishToFarcaster && (!normalizedCreds.neynarApiKey || !normalizedCreds.farcasterSignerUuid)) {
+    return NextResponse.json(
+      { ok: false, error: "Neynar API Key and Farcaster Signer UUID are required" },
+      { status: 400, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   const tasks: Promise<PublishResult>[] = [];
   if (publishToTwitter) {
     tasks.push(
@@ -261,6 +324,17 @@ export async function POST(request: Request) {
         ok: false,
         error: error instanceof Error ? error.message : "Unexpected publish error",
       }))
+    );
+  }
+  if (publishToFarcaster) {
+    tasks.push(
+      publishFarcaster(text, normalizedCreds.neynarApiKey, normalizedCreds.farcasterSignerUuid).catch(
+        (error: unknown) => ({
+          platform: "farcaster",
+          ok: false,
+          error: error instanceof Error ? error.message : "Unexpected publish error",
+        })
+      )
     );
   }
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CircleHelp, ExternalLink, Loader2, ShieldCheck } from "lucide-react";
 
 type PublishResult = {
-  platform: "twitter" | "square";
+  platform: "twitter" | "square" | "farcaster";
   ok: boolean;
   url?: string;
   id?: string;
@@ -14,7 +14,13 @@ type PublishResult = {
 };
 
 function platformLabel(platform: PublishResult["platform"]): string {
-  return platform === "twitter" ? "X / Twitter" : "Binance Square";
+  if (platform === "twitter") {
+    return "X / Twitter";
+  }
+  if (platform === "farcaster") {
+    return "Farcaster";
+  }
+  return "Binance Square";
 }
 
 export function PublisherStudio() {
@@ -23,9 +29,12 @@ export function PublisherStudio() {
   const [twitterApiSecret, setTwitterApiSecret] = useState("");
   const [twitterAccessToken, setTwitterAccessToken] = useState("");
   const [twitterAccessSecret, setTwitterAccessSecret] = useState("");
+  const [neynarApiKey, setNeynarApiKey] = useState("");
+  const [farcasterSignerUuid, setFarcasterSignerUuid] = useState("");
   const [text, setText] = useState("");
   const [publishToTwitter, setPublishToTwitter] = useState(true);
   const [publishToBinance, setPublishToBinance] = useState(true);
+  const [publishToFarcaster, setPublishToFarcaster] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [responseNotice, setResponseNotice] = useState("");
@@ -36,7 +45,7 @@ export function PublisherStudio() {
     if (!text.trim()) {
       return true;
     }
-    if (!publishToTwitter && !publishToBinance) {
+    if (!publishToTwitter && !publishToBinance && !publishToFarcaster) {
       return true;
     }
     if (publishToBinance && !binanceApiKey.trim()) {
@@ -51,10 +60,16 @@ export function PublisherStudio() {
     ) {
       return true;
     }
+    if (publishToFarcaster && (!neynarApiKey.trim() || !farcasterSignerUuid.trim())) {
+      return true;
+    }
     return false;
   }, [
     binanceApiKey,
+    farcasterSignerUuid,
+    neynarApiKey,
     publishToBinance,
+    publishToFarcaster,
     publishToTwitter,
     text,
     twitterAccessSecret,
@@ -78,6 +93,7 @@ export function PublisherStudio() {
           publishTo: {
             twitter: publishToTwitter,
             binance: publishToBinance,
+            farcaster: publishToFarcaster,
           },
           credentials: {
             binanceApiKey,
@@ -85,6 +101,8 @@ export function PublisherStudio() {
             twitterApiSecret,
             twitterAccessToken,
             twitterAccessSecret,
+            neynarApiKey,
+            farcasterSignerUuid,
           },
         }),
       });
@@ -119,7 +137,7 @@ export function PublisherStudio() {
         <div className="space-y-4">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">Web Publisher</h1>
           <p className="text-zinc-400 text-lg">
-            输入你自己的 X API 和 Binance API，直接发布同一条内容到两个平台。
+            输入你自己的 X API、Binance API、Farcaster 参数，直接发布同一条内容到多个平台。
           </p>
           <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300">
             <ShieldCheck className="w-4 h-4" />
@@ -133,14 +151,14 @@ export function PublisherStudio() {
               <CircleHelp className="w-5 h-5 text-primary" />
               不懂如何获取 API？
             </CardTitle>
-            <CardDescription>点击下方按钮查看 X / Binance 的配置步骤。</CardDescription>
+            <CardDescription>点击下方按钮查看 X / Binance / Farcaster 的配置步骤。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button variant="dark" onClick={() => setShowGuide((value) => !value)}>
               {showGuide ? "收起教程" : "点击这里查看 API 配置教程"}
             </Button>
             {showGuide ? (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
                   <h3 className="text-white font-semibold">X / Twitter API</h3>
                   <ol className="text-sm text-zinc-300 space-y-2 list-decimal pl-4">
@@ -173,6 +191,23 @@ export function PublisherStudio() {
                     className="inline-flex items-center gap-1 text-primary hover:text-[#FCD535]/80 text-sm"
                   >
                     查看 Binance 文档入口
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+                <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-4 space-y-3">
+                  <h3 className="text-white font-semibold">Farcaster (Neynar)</h3>
+                  <ol className="text-sm text-zinc-300 space-y-2 list-decimal pl-4">
+                    <li>注册 Neynar 并创建应用，获取 API Key。</li>
+                    <li>创建 signer request 并在 Warpcast 批准。</li>
+                    <li>拿到 signer_uuid 后填入下方输入框。</li>
+                  </ol>
+                  <a
+                    href="https://docs.neynar.com/docs/write-to-farcaster-with-neynar-managed-signers"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:text-[#FCD535]/80 text-sm"
+                  >
+                    查看 Farcaster 接入教程
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -238,6 +273,26 @@ export function PublisherStudio() {
                   className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-primary"
                 />
               </label>
+              <label className="space-y-2">
+                <span className="text-sm text-zinc-300">Neynar API Key</span>
+                <input
+                  type="password"
+                  value={neynarApiKey}
+                  onChange={(event) => setNeynarApiKey(event.target.value)}
+                  placeholder="NEYNAR_API_KEY"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-primary"
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm text-zinc-300">Farcaster Signer UUID</span>
+                <input
+                  type="password"
+                  value={farcasterSignerUuid}
+                  onChange={(event) => setFarcasterSignerUuid(event.target.value)}
+                  placeholder="FARCASTER_SIGNER_UUID"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-primary"
+                />
+              </label>
             </div>
 
             <div className="flex flex-wrap gap-6">
@@ -258,6 +313,15 @@ export function PublisherStudio() {
                   className="accent-primary"
                 />
                 发布到 Binance Square
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={publishToFarcaster}
+                  onChange={(event) => setPublishToFarcaster(event.target.checked)}
+                  className="accent-primary"
+                />
+                发布到 Farcaster
               </label>
             </div>
           </CardContent>

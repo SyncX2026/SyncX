@@ -6,6 +6,7 @@ Supports text publishing to:
 - X/Twitter (official API mode or browser-session mode)
 - Telegram (bot API)
 - Threads (official Graph API, optional)
+- Farcaster (Neynar API + managed signer, optional)
 """
 
 from __future__ import annotations
@@ -31,19 +32,21 @@ DEFAULT_TWITTER_V2_BASE_URL = "https://api.x.com/2"
 DEFAULT_TWITTER_WEB_BASE_URL = "https://api.x.com"
 DEFAULT_TELEGRAM_BASE_URL = "https://api.telegram.org"
 DEFAULT_THREADS_BASE_URL = "https://graph.threads.net/v1.0"
+DEFAULT_FARCASTER_BASE_URL = "https://api.neynar.com/v2/farcaster"
 
 TWITTER_WEB_BEARER_FALLBACK = (
     "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D"
     "1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 )
 
-SUPPORTED_PLATFORMS = ("square", "twitter", "tg", "threads")
+SUPPORTED_PLATFORMS = ("square", "twitter", "tg", "threads", "farcaster")
 
 PLATFORM_SETUP_DOCS = {
     "square": "references/setup-square.md",
     "twitter": "references/setup-twitter-official.md",
     "tg": "references/setup-telegram.md",
     "threads": "references/setup-threads.md",
+    "farcaster": "references/setup-farcaster-neynar.md",
 }
 
 TWITTER_MODE_DOCS = {
@@ -83,6 +86,10 @@ THREADS_ACCESS_TOKEN=
 THREADS_USER_ID=
 # Optional; used only for pretty URL output.
 THREADS_USERNAME=
+
+# ---------- Farcaster (Neynar managed signer) ----------
+NEYNAR_API_KEY=
+FARCASTER_SIGNER_UUID=
 """
 
 
@@ -109,7 +116,9 @@ def load_config(config_path: Path) -> Dict[str, str]:
     cfg = parse_env_file(config_path)
     # Environment variables override file values.
     for key, value in os.environ.items():
-        if key in cfg or key.startswith(("BINANCE_", "TWITTER_", "TELEGRAM_", "THREADS_")):
+        if key in cfg or key.startswith(
+            ("BINANCE_", "TWITTER_", "TELEGRAM_", "THREADS_", "NEYNAR_", "FARCASTER_")
+        ):
             cfg[key] = value
     return cfg
 
@@ -561,6 +570,66 @@ def publish_threads(cfg: Dict[str, str], text: str, timeout: int, base_url: str)
     return result
 
 
+def publish_farcaster(cfg: Dict[str, str], text: str, timeout: int, base_url: str) -> Dict[str, Any]:
+    api_key = cfg.get("NEYNAR_API_KEY", "").strip()
+    signer_uuid = cfg.get("FARCASTER_SIGNER_UUID", "").strip()
+
+    missing = [
+        name
+        for name, value in (
+            ("NEYNAR_API_KEY", api_key),
+            ("FARCASTER_SIGNER_UUID", signer_uuid),
+        )
+        if not value
+    ]
+    if missing:
+        return build_error("farcaster", f"Missing {', '.join(missing)}")
+
+    url = f"{base_url.rstrip('/')}/cast"
+    headers = {
+        "x-api-key": api_key,
+        "Content-Type": "application/json",
+    }
+
+    try:
+        status, payload, raw = http_request(
+            method="POST",
+            url=url,
+            timeout=timeout,
+            headers=headers,
+            json_body={"text": text, "signer_uuid": signer_uuid},
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        return build_error("farcaster", str(exc))
+
+    cast = payload.get("cast") if isinstance(payload, dict) else None
+    cast_hash = cast.get("hash") if isinstance(cast, dict) else None
+    author = cast.get("author") if isinstance(cast, dict) else None
+    username = author.get("username") if isinstance(author, dict) else None
+
+    success = status < 400 and bool(cast_hash)
+    result: Dict[str, Any] = {
+        "platform": "farcaster",
+        "ok": success,
+        "http_status": status,
+        "response": payload if isinstance(payload, dict) else {"raw": raw},
+    }
+
+    if success:
+        cast_hash_str = str(cast_hash)
+        result["id"] = cast_hash_str
+        if username:
+            result["url"] = f"https://warpcast.com/{username}/{cast_hash_str}"
+    else:
+        result["error"] = (
+            payload.get("message")
+            if isinstance(payload, dict)
+            else "Farcaster publish failed"
+        )
+
+    return result
+
+
 def parse_platforms(raw: str) -> List[str]:
     if not raw.strip():
         return ["square", "twitter"]
@@ -596,6 +665,8 @@ def required_keys_for(platform: str, twitter_mode: str) -> List[str]:
         return ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]
     if platform == "threads":
         return ["THREADS_ACCESS_TOKEN", "THREADS_USER_ID"]
+    if platform == "farcaster":
+        return ["NEYNAR_API_KEY", "FARCASTER_SIGNER_UUID"]
     return []
 
 
@@ -692,6 +763,7 @@ def publish_all(
     twitter_web_base_url: str,
     telegram_base_url: str,
     threads_base_url: str,
+    farcaster_base_url: str,
     sequential: bool,
 ) -> Dict[str, Any]:
     jobs = {}
@@ -707,6 +779,8 @@ def publish_all(
             jobs[platform] = lambda p=platform: publish_tg(cfg, text, timeout, telegram_base_url)
         elif platform == "threads":
             jobs[platform] = lambda p=platform: publish_threads(cfg, text, timeout, threads_base_url)
+        elif platform == "farcaster":
+            jobs[platform] = lambda p=platform: publish_farcaster(cfg, text, timeout, farcaster_base_url)
 
     results: Dict[str, Any] = {}
 
@@ -756,7 +830,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--platforms",
         default="square,twitter",
-        help="Comma-separated: square,twitter,tg,threads (default: square,twitter)",
+        help="Comma-separated: square,twitter,tg,threads,farcaster (default: square,twitter)",
     )
     parser.add_argument(
         "--twitter-mode",
@@ -778,6 +852,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--twitter-web-base-url", default=DEFAULT_TWITTER_WEB_BASE_URL)
     parser.add_argument("--telegram-base-url", default=DEFAULT_TELEGRAM_BASE_URL)
     parser.add_argument("--threads-base-url", default=DEFAULT_THREADS_BASE_URL)
+    parser.add_argument("--farcaster-base-url", default=DEFAULT_FARCASTER_BASE_URL)
 
     return parser.parse_args()
 
@@ -839,6 +914,7 @@ def main() -> int:
         twitter_web_base_url=args.twitter_web_base_url,
         telegram_base_url=args.telegram_base_url,
         threads_base_url=args.threads_base_url,
+        farcaster_base_url=args.farcaster_base_url,
         sequential=args.sequential,
     )
 
